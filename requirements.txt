@@ -1,0 +1,9 @@
+esper
+numpy
+pillow
+pyffmpeg
+requests
+tqdm
+moderngl
+msgspec
+yaspin
