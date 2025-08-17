@@ -21,11 +21,12 @@ import os
 import sys
 import inspect
 
-from dataclasses import dataclass
-
 import esper
 import requests
 import resources
+
+from dataclasses import dataclass
+from . import common
 
 # MARK: Helpers
 # This is particularly useful for this module...
@@ -223,6 +224,8 @@ class FoveCompositorLayerSubmitInfo(ctypes.Structure):
     ]
 
 # MARK: Headset Init
+FOVE_DISPLAY_SIZE = 2560 // 2, 1440
+
 class HeadsetHandle(ctypes.c_void_p): pass
 
 @dataclass
@@ -454,3 +457,5 @@ processors = [
 
 for processor in processors:
     esper.add_processor(processor())
+
+esper.dispatch_event(common.HAL_RENDER_CONTEXT_READY, FOVE_DISPLAY_SIZE)

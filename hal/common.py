@@ -20,6 +20,7 @@ import os
 
 HAL_DATA_PUBLISHED = "hal_data_published"
 HAL_PUSH_FRAME_AND_VSYNC = "hal_push_frame"
+HAL_RENDER_CONTEXT_READY = "hal_render_context_ready"
 
 # MARK: Supported Hardware
 # If you want to target a new device for stimulus display and/or
