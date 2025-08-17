@@ -13,22 +13,24 @@
 # You should have received a copy of the GNU General Public License along with
 # EyeMotion. If not, see <https://www.gnu.org/licenses/>. 
 
-
+import argparse
+import importlib
 import sys
 import esper
 
 import cli
-import hal
+import hal.common
 import ui
 import recorder
 
+
 # MARK: FSM glue
 
-def push_frame(texture_id): esper.dispatch_event(hal.HAL_PUSH_FRAME_AND_VSYNC, texture_id)
+def push_frame(texture_id): esper.dispatch_event(hal.common.HAL_PUSH_FRAME_AND_VSYNC, texture_id)
 esper.set_handler(ui.UI_FRAME_READY, push_frame)
 
 def data_available(datum): esper.dispatch_event(recorder.RECORDER_DATA_AVAILABLE, datum)
-esper.set_handler(hal.HAL_DATA_PUBLISHED, data_available)
+esper.set_handler(hal.common.HAL_DATA_PUBLISHED, data_available)
 
 def recording_complete(output_path): esper.dispatch_event(cli.CLI_RESPONSE_READY, True, output_path)
 esper.set_handler(recorder.RECORDER_COMPLETE, recording_complete)
@@ -70,6 +72,37 @@ def parse_record(args):
 
 esper.dispatch_event(cli.CLI_ADD_PARSER, "record", "analyze eye movements for a given duration", parse_record)
 
+# MARK: Startup
+
+def initialize_hal(display_name, recorder_name=None):
+    importlib.import_module(f"hal.{display_name}")
+    if recorder_name is not None and recorder_name != display_name:
+        importlib.import_module(f"hal.{recorder_name}")
+
+parser = argparse.ArgumentParser(
+    prog="EyeMotion",
+    description="A device-agnostic platform for oculomotor screening in resource-diverse settings",
+    epilog="EyeMotion is free software; you are welcome to redistribute it. See `LICENSE.txt` for details."
+)
+
+parser.add_argument(
+    "-d",
+    "--display",
+    choices=hal.common.HAL_DISPLAYS,
+    required=True,
+    help="device to display stimuli to"
+)
+
+parser.add_argument(
+    "-r",
+    "--recorder",
+    choices=hal.common.HAL_RECORDERS,
+    help="device to intake data from"
+)
+
 # MARK: Main
+
+args = parser.parse_args()
+initialize_hal(args.display, args.recorder)
 
 while True: esper.process()

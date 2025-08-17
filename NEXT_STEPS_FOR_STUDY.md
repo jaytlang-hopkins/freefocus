@@ -15,8 +15,8 @@ analysis (see below for the stats discussion, but TL;DR it's time independent
 spectral methods).
 
 **Technical recommendations**:
-* Let's make a `hal` _directory_ with its own `__init__.py` and then pick what
-  device the user should input based on a command-line `--device` flag.
+* :white_check_mark: *Let's make a `hal` _directory_ with its own `__init__.py` and then pick what
+  device the user should input based on a command-line `--device` flag.*
 * Let's isolate out common code to open a full-screen window and shove a texture
   into it, since all two-three new ports will need that capability. This should
   be straightforward, especially if we drop `moderngl` and go full `pyopengl`.
