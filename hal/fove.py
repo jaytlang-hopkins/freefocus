@@ -1,4 +1,4 @@
-# File: hal.py
+# File: hal/fove.py
 # Copyright 2025 Jay Lang
 # 
 # This file is part of the EyeMotion project. EyeMotion is free software: you
@@ -13,6 +13,8 @@
 # You should have received a copy of the GNU General Public License along with
 # EyeMotion. If not, see <https://www.gnu.org/licenses/>. 
 
+# TODO: TEST ME under a supported device
+
 import ctypes
 import datetime
 import os
@@ -23,7 +25,6 @@ from dataclasses import dataclass
 
 import esper
 import requests
-
 import resources
 
 # MARK: Helpers
@@ -31,11 +32,6 @@ import resources
 def remove_component_if_present(entity, component_type):
     if esper.has_component(entity, component_type):
         esper.remove_component(entity, component_type)
-
-# MARK: Events
-
-HAL_DATA_PUBLISHED = "hal_data_published"
-HAL_PUSH_FRAME_AND_VSYNC = "hal_push_frame"
 
 # MARK: FFI
 FOVE_SDK_URL = "https://github.com/FoveHMD/FoveCppSample/raw/refs/heads/master/FOVE%20SDK%201.3.1/FoveClient.dll"
@@ -59,7 +55,8 @@ class FoveSDKHandle:
                 for chunk in response.iter_content(chunk_size=16384):
                     fp.write(chunk)
     
-        self._sdk_handle = ctypes.CDLL(dll_path)
+        try: self._sdk_handle = ctypes.CDLL(dll_path)
+        except OSError as e: e.add_note("FOVE may not support your platform (not Windows?)"); raise
     
     def call(self, method, *args):
         f = getattr(self._sdk_handle, method)
