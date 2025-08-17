@@ -61,7 +61,7 @@ void main() {
 
 # MARK: GL init
 
-WINDOW_SIZE = 2560 // 2, 1440
+WINDOW_SIZE = "This should be filled in by `setup_gl()`"
 MAX_RECTANGLES = 100
 
 @dataclass
@@ -95,9 +95,13 @@ def instance_buffer_for_shader_input(context, input):
     ibo = context.buffer(reserve=MAX_RECTANGLES * 4 * int(dtype[0]))
     return (ibo, dtype, input)
 
-def setup_gl():
+def setup_gl(window_size, context=None):
+    # 0. Establish a good window size
+    global WINDOW_SIZE
+    WINDOW_SIZE = window_size # I love weakly typed languages
+
     # 1. Wire up the GPU
-    context = moderngl.create_context(standalone=True)
+    if context is None: context = moderngl.create_context(standalone=True)
     texture = context.texture(WINDOW_SIZE, components=4)
     framebuffer = context.framebuffer(color_attachments=[texture]); framebuffer.use()
 
@@ -124,8 +128,6 @@ def setup_gl():
         scale_buffer=graphics_memory[VERTEX_IN_SCALE][0],
         color_buffer=graphics_memory[VERTEX_IN_COLOR][0],
     ))
-
-setup_gl()
 
 # MARK: Rendering
 
@@ -330,6 +332,7 @@ UI_STATE_CONVERGING = "ui_converge"
 UI_STATE_OPENING = "ui_opening"
 UI_STATE_RUNNING = "ui_running"
 
+UI_START = "ui_start"
 UI_FRAME_READY = "ui_frame_ready"
 
 # MARK: Particles
@@ -447,20 +450,25 @@ esper.set_handler(UI_STATE_IDLE, remove_lines)
 
 # MARK: Main
 
-processors = [
-    CopyToGPU,
-    Render,
-    Motion,
-    Convergence, 
-    Bounds,
-    Respawn,
-    ColorFade,
-    FadeOut,
-    AlignParticles,
-    CurtainsOpen,
-]
+def start_ui(window_size, context=None):
+    setup_gl(window_size, context)
 
-for processor in processors:
-    esper.add_processor(processor())
+    processors = [
+        CopyToGPU,
+        Render,
+        Motion,
+        Convergence, 
+        Bounds,
+        Respawn,
+        ColorFade,
+        FadeOut,
+        AlignParticles,
+        CurtainsOpen,
+    ]
 
-esper.dispatch_event(UI_STATE_IDLE)
+    for processor in processors:
+        esper.add_processor(processor())
+
+    esper.dispatch_event(UI_STATE_IDLE)
+
+esper.set_handler(UI_START, start_ui)

@@ -35,6 +35,9 @@ esper.set_handler(hal.common.HAL_DATA_PUBLISHED, data_available)
 def recording_complete(output_path): esper.dispatch_event(cli.CLI_RESPONSE_READY, True, output_path)
 esper.set_handler(recorder.RECORDER_COMPLETE, recording_complete)
 
+def start_ui(window_size, context=None): esper.dispatch_event(ui.UI_START, window_size, context)
+esper.set_handler(hal.common.HAL_RENDER_CONTEXT_READY, start_ui)
+
 # MARK: Command parsing
 
 def parse_show(args):
