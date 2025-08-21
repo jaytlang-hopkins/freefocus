@@ -48,20 +48,14 @@ with our trigonometric analysis in `recorder.py`.
 ## Commands :lock:
 In addition to some code to create or input a 64-bit pseudo-random key
 (needed for study identifier generation), which is obviously trivial, we need
-to `import requests` in here and upload derived/de-identified participant data
-to a remote cloud-based endpoint. Given that this runs within Hopkins IT infrastructure,
-a SAFE-based instance can then poll it for new data over and over again, and all
-requirements specified in the paper are met without any P2P hole punching / the SSH forwarding
-I originally envisioned.
+to get derived/de-identified participant data to a remote cloud endpoint _without_
+user interaction. According to Hopkins RIT, OneDrive is secure for this use case
+if appropriately configured -- as I can't find any direct HTTPS endpoint exposure
+within existing infrastructure, this is the next best thing. We can then hole-punch
+from SAFE as needed for subsequent analyses.
 
-*(We should also blow away the storage of this HTTP server with some timeout e.g. 5 minutes
-to make sure PHI (not PII at this point) doesn't accumulate where we don't want it.
-Bridging that data through trusted Hopkins infrastructure is fine, losing track of it isn't.)*
-
-The hardest part of this is not `import requests`, but:
-* Doing all the diplomacy to get at least three certificates under the Hopkins CA for mTLS
-* Setting up an instance that abides by all the requirements for PHI stuff; if you can call
-  linked study data PHI...
-* Writing the requisite tiny little flask server or similar for the server / intermediary side
-
-...and I will happily write these emails when I have spare cycles.
+**Technical recommendation**: Python may support an in-memory file handle abstraction.
+This helps our security argument as nothing will hit the disk, even in designated
+"temp" directories -- so we can't forget to delete anything. Full-disk encryption
+ensures the rest works well. *Bridging that data through trusted Hopkins
+infrastructure is fine, losing track of it isn't.*
