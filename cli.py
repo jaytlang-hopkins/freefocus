@@ -230,7 +230,7 @@ class ServerConnection:
             self._writer.enqueue_object(command); self._writer.send_enqueued_objects()
             return self._reader.read()
         except ConnectionError:
-            print("Lost connection to the EyeMotion service -- is the headset still running?")
+            print("Lost connection to the EyeMotion service")
             sys.exit(1)
 
 def read_user_input(previous_command_succeeded):
