@@ -24,16 +24,14 @@ HAL_RENDER_CONTEXT_READY = "hal_render_context_ready"
 
 # MARK: Supported Hardware
 # If you want to target a new device for stimulus display and/or
-# data acquisition, add it by name to one of these lists!
-
-HAL_DISPLAYS = {"fove", "screen"}
-HAL_RECORDERS = {"fove"}
-
-# Sanity checking beyond this point...
+# data acquisition, add an appropriately named *.py file to this directory!
 
 hal_directory = os.path.dirname(os.path.realpath(__file__))
 available_files = glob.glob(f"{hal_directory}/[a-z]*.py")
-available_modules = [os.path.basename(os.path.splitext(f)[0]) for f in available_files]
 
-for support_list in HAL_DISPLAYS, HAL_RECORDERS:
-    for module in support_list: assert module in available_modules
+HAL_DEVICES = []
+for f in available_files:
+    filename = os.path.basename(f)
+    if filename != os.path.basename(__file__):
+        HAL_DEVICES.append(os.path.splitext(filename)[0])
+

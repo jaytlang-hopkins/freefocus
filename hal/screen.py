@@ -14,7 +14,6 @@
 # EyeMotion. If not, see <https://www.gnu.org/licenses/>. 
 
 import esper
-import moderngl
 import moderngl_window
 import sys
 

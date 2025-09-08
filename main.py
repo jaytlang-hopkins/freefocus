@@ -23,7 +23,6 @@ import hal.common
 import ui
 import recorder
 
-
 # MARK: FSM glue
 
 def push_frame(texture_id): esper.dispatch_event(hal.common.HAL_PUSH_FRAME_AND_VSYNC, texture_id)
@@ -75,12 +74,7 @@ def parse_record(args):
 
 esper.dispatch_event(cli.CLI_ADD_PARSER, "record", "analyze eye movements for a given duration", parse_record)
 
-# MARK: Startup
-
-def initialize_hal(display_name, recorder_name=None):
-    importlib.import_module(f"hal.{display_name}")
-    if recorder_name is not None and recorder_name != display_name:
-        importlib.import_module(f"hal.{recorder_name}")
+# MARK: Main
 
 parser = argparse.ArgumentParser(
     prog="EyeMotion",
@@ -90,22 +84,13 @@ parser = argparse.ArgumentParser(
 
 parser.add_argument(
     "-d",
-    "--display",
-    choices=hal.common.HAL_DISPLAYS,
+    "--device",
+    choices=hal.common.HAL_DEVICES,
     required=True,
-    help="device to display stimuli to"
+    help="peripheral to display stimuli and collect eye data"
 )
-
-parser.add_argument(
-    "-r",
-    "--recorder",
-    choices=hal.common.HAL_RECORDERS,
-    help="device to intake data from"
-)
-
-# MARK: Main
 
 args = parser.parse_args()
-initialize_hal(args.display, args.recorder)
+importlib.import_module(f"hal.{args.device}")
 
 while True: esper.process()
