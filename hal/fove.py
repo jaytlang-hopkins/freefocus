@@ -416,7 +416,7 @@ class Publication(esper.Processor):
             for f in INTAKE_FUNCTIONS: f(handle, datum)
 
             # 2. Event the data out!
-            esper.dispatch_event(HAL_DATA_PUBLISHED, datum)
+            esper.dispatch_event(common.HAL_DATA_PUBLISHED, datum)
 
             # 3. Clean up locally
             esper.remove_component(ent, Datum)
@@ -445,7 +445,7 @@ def push_frame(texture_id):
 
         sdk().call("fove_Compositor_submit", rt.compositor, ctypes.byref(submission), 1)
 
-esper.set_handler(HAL_PUSH_FRAME_AND_VSYNC, push_frame)
+esper.set_handler(common.HAL_PUSH_FRAME_AND_VSYNC, push_frame)
 
 # MARK: Main
 
