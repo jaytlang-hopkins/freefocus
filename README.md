@@ -1,41 +1,26 @@
-# EyeMotion: Enabling Rapid, Equitable Innovation in Ocular Biomarker Diagnostics
+# FreeFocus: Enabling Rapid, Equitable Innovation in Ocular Biomarker Diagnostics
 
-Neurologic diseases burden our healthcare infrastructure, while devastating patients and their families. Among these pathologies, myasthenia gravis (MG) is an urgent, costly, and underdiagnosed threat.
+Neurological disorders are the leading cause of worldwide disease burden, accounting globally for more disability-adjusted life years (DALYs) than any other category of illness. In 2021, an estimated 3.4 billion people - 43.1% of the global population - were living with such a disease. And, across both chronic and acute neurologic dysfunction, limited diagnostic capability is consistently linked to later-stage presentations and reduced treatment efficacy - especially within rural, underserved, and minority populations.
 
-### Why MG?
-
-* **Rapid Progression**: 23–30% of ocular MG (OMG) cases progress to generalized MG within two years. After such
-a diagnosis, up to 20% of patients experience life-threatening *myasthenic crisis* - a respiratory failure requiring rapid medical intervention.
-* **Diagnostic Pitfalls**: Early MG diagnosis is essential, but today's clinical standards lag the needs of patients. Traditional serological testing is ineffective -- up to 50% of OMG patients will result negative for AchR antibodies. The gold-standard of electrophysiology (sfEMG/RNS) is costly, slow, and unavailable in community and underserved settings.
-* **Cost**: MG hospitalizations cost the U.S. $547M in 2013 - 2-4x more per patient than more well-known pathologies including Multiple Sclerosis. MG saw a staggering 13-fold rise in per-hospitalization costs between 2003 and 2013, and this number continues to climb today.
-* **Inequity**: The elderly and underserved are consistently under-diagnosed, and the financial burden of hospitalization varies regionally by almost two-fold.
-
-Today, no modern, rapid, and accurate bedside tool exists for straightforward MG diagnosis - especially for OMG, the earliest and most treatable phase of disease. *Such a gap creates missed opportunities, and causes unnecessary suffering*.
+Digital biomarkers offer a promising path forward: by enabling objective, autonomous measurement of physiologic function, they hold potential to decentralize screening, support earlier referral, and accelerate cross-site clinical trials. Among candidate biomarkers, ocular motor behavior is especially well characterized. Neural circuitry governing visual pathways broadly pervades the brain, and canonical paradigms - such as saccades [14-16], smooth pursuit [17-19], and optokinetic nystagmus [20-21] - exhibit reproducible abnormalities across diverse etiologies.
 
 ### Recent Research Can Fill This Gap
 
-A profound opportunity for MG screening lays right before our eyes: **the eyes themselves.**
+Digital biomarkers offer a promising path forward: by enabling objective, autonomous measurement of physiologic function, they hold potential to decentralize screening, support earlier referral, and accelerate cross-site clinical trials. Among candidate biomarkers, ocular motor behavior is especially well characterized. Neural circuitry governing visual pathways broadly pervades the brain, and canonical paradigms - such as saccades, smooth pursuit, and optokinetic nystagmus - exhibit reproducible abnormalities across diverse etiologies.
 
-Ocular motility disturbances are among the earliest, most sensitive, and most objective biomarkers of MG - often preceding generalized weakness. Careful observation of eye movements provides a unique noninvasive window into the health of the nervous system - a potential *biomarker* to localize a broad spectrum of neurological dysfunction.
+Video-oculography (VOG) provides a non-invasive means to capture these signals, yielding quantitative metrics of CNS function. The proliferation of consumer-grade eye-tracking devices, from head-mounted displays (HMDs) to laptop webcams, creates an unprecedented opportunity to utilize VOG in community or telehealth contexts. However, previous VOG-based work cannot be reproduced across research centers or in resource-sparse settings due to key translational gaps:
 
-At Johns Hopkins, extensive research has validated this biomarker with promising early results:
-* AI systems built on Hopkins data achieve an AUC of 0.77 for MG detection from video-oculography (VOG), with 74% balanced accuracy in initial studies.
-* MG-positive and control data has been captured and analyzed in large volume, laying a foundation for future clinical trials.
+* **Dependence on high-cost, proprietary platforms** -- Much existing literature assumes access to high-cost devices within a dedicated neuro-ocular research laboratory, or leverages dedicated compute + site-specific procedures for post-processing.
+* **Lack of consideration for telemedicine** -- Previous work from Johns Hopkins utilizes an enterprise wireless network for the transmission of PII, while smartphone-based literature assumes a managed mobile device for data collection. These assumptions were not intended for outpatient or telemedical settings, where they may risk data compromise or regulatory non-compliance. 
+* **Single-device, single-context silos** Most studies validate only single devices for use in identifying a single disease target. For AI-augmented diagnosis of pathology, e.g. Bachina et al., the lack of cross-device and cross-population data risks overfitting - potentially leading to false reassurance or overdiagnosis in community settings.
 
-But despite this proven diagnostic value, VOG tools aren't seen outside of specialized labs. The promising solutions I've mentioned are hardly available to patients -- and the reason for this is a **systems-level failure**.
-
-* VOG headsets are **extremely costly**, and availability of headsets varies by region. A system that diagnoses patients at one hospital may be completely unusable in another.
-* Software to program VOG devices is often **heavy-weight** and **difficult to understand**, making screening patients impossible in under-resourced settings.
-
-I've seen this bottleneck play out in clinic - it's overwhelmingly clear that
-our progress, however impressive, isn't making it to those who need it most. As
-a future physician with an engineering background, I feel it is my
-responsibility to help close this gap.
+These barriers create a fragmented, non-interoperable evidence base for VOG-based diagnostics, stifle cross-site collaboration towards digital biomarker discovery, and hinder neurological screening efforts in non-tertiary settings.  This reflects a cross-level organizational gap in digital health infrastructure, and stands at odds with a national health strategy advocating secure, interoperable, and socioeconomically unbiased research technology.
 
 ## My contribution: screening where it is needed
 
-EyeMotion is a *critical enabler* for the next generation of oculomotor biomarker research and care.
-Over the summer I've built an open infrastructure that lets every clinical/research team:
+To rectify these limitations, I've developed FreeFocus - an open-source, device-agnostic, telemedicine-ready VOG platform validated across heterogeneous hardware. FreeFocus is a *critical enabler* for the next generation of oculomotor biomarker research, and may more broadly contribute to telemedical neurological care.
+
+This is an open infrastructure that lets every clinical/research team:
 
 * Easily make new visual/oculomotor protocols and bring them to the bedside - with _any_ modern VR device, or even a webcam and a laptop.
 * Record a uniform set of eye tracking data, and synchronize that with an annotated video - so clinicians can immediately review screening results.
@@ -50,7 +35,7 @@ For now, if you have a FOVE, install a copy of the runtime and then run this:
 git clone https://github.com/jaytlang-hopkins/EyeMotion.git
 cd EyeMotion
 pip install -r requirements.txt
-python main.py
+python main.py --device fove
 ```
 
 That's it. Sample usage:
@@ -90,9 +75,7 @@ commitment to this field. With systems like this, we plug critical holes and
 get treatments to patients quicker regardless of their circumstances. That allows providers - and future providers, like me - to do more, and be more.
 
 ## Contributing
-Open an issue, pull request, or email:
-* Me: jlang20@jh.edu
-* Dr. Kemar Green, my mentor and PI: kgreen66@jhmi.edu
+Open an issue, pull request, or [email me](mailto:jlang20@jh.edu)
 
 ## License
-GPL v3 — always open, always community-first.
+GPLv3 — always open, always community-first.
