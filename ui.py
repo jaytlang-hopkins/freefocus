@@ -19,6 +19,7 @@ import moderngl
 import numpy as np
 import random
 import sys
+import time
 
 from collections import namedtuple
 from dataclasses import dataclass
@@ -139,6 +140,7 @@ class BringToFront: pass
 
 BLACK = Color(0, 0, 0, 255)
 WHITE = Color(255, 255, 255, 255)
+RED = Color(255, 0, 0, 255)
 
 class CopyToGPU(esper.Processor):
     def _commit_uploads(self, gpu, offsets, scales, colors):
@@ -193,6 +195,21 @@ class Motion(esper.Processor):
         for ent, (pos, vel) in esper.get_components(Position, Velocity):
             new_position = Position(pos.x + vel.dx, pos.y + vel.dy)
             esper.add_component(ent, new_position)
+
+class Halt: pass
+class Slow(esper.Processor):
+    def __init__(self, damping_factor=2, epsilon=1):
+        super().__init__()
+        self._damping_factor = damping_factor
+        self._epislon = epsilon
+
+    def process(self):
+        for ent, _ in esper.get_component(Halt):
+            vel = esper.try_component(ent, Velocity)
+
+            if vel is None: esper.remove_component(ent, Halt)
+            elif np.linalg.norm(vel) < self._epislon: esper.remove_component(ent, Velocity)
+            else: esper.add_component(ent, Velocity(vel.dx / 2, vel.dy / 2))
 
 TargetPoint = namedtuple("TargetPoint", "x y")
 ArrivedAtTarget = namedtuple("ArrivedAtTarget", "x y")
@@ -327,10 +344,12 @@ class FadeOut(esper.Processor):
 
 # MARK: Events
 
-UI_STATE_IDLE = "ui_idle"
-UI_STATE_CONVERGING = "ui_converge"
-UI_STATE_OPENING = "ui_opening"
-UI_STATE_RUNNING = "ui_running"
+UI_GO_IDLE = "ui_idle"
+UI_START_OKN = "ui_start_okn"
+UI_START_SACCADES = "ui_start_saccades"
+
+UI_OPEN_CURTAINS = "ui_open_curtains"
+UI_ELICIT_OKN = "ui_elicit_okn"
 
 UI_START = "ui_start"
 UI_FRAME_READY = "ui_frame_ready"
@@ -343,22 +362,29 @@ class Particle:
 
 INITIAL_PARTICLE_COLOR = Color(128, 128, 128, 255)
 CONVERGING_PARTICLE_COLOR = Color(*WHITE)
+PARTICLE_SIDE_LENGTH = 20
 
-def create_particles(num_particles=20, particle_side_length=20):
+def create_particles(num_particles=20):
     if any(True for _ in esper.get_component(Particle)): return # idempotency
 
     for i in range(num_particles):
         esper.create_entity(
             Position(0, 0), OOB(),
-            Size(particle_side_length, particle_side_length),
+            Size(PARTICLE_SIDE_LENGTH, PARTICLE_SIDE_LENGTH),
             Color(*BLACK),
             DesiredColor(*INITIAL_PARTICLE_COLOR),
             Respawnable(None, True),
             Particle(i)
         )
 
+esper.set_handler(UI_GO_IDLE, create_particles)
+
+# MARK: OKN: Converge
+
 def converge_particles():
-    particle_count = sum(1 for _ in esper.get_component(Particle))
+    while (particle_count := sum(1 for _ in esper.get_component(Particle))) == 0:
+        create_particles()
+
     gap_between_particles = WINDOW_SIZE[0] / (particle_count + 1)
 
     for ent, (particle, size) in esper.get_components(Particle, Size):
@@ -380,17 +406,16 @@ class AlignParticles(esper.Processor):
         num_particles_on_target = sum(1 for _ in esper.get_components(Particle, ArrivedAtTarget)) 
 
         if num_particles > 0 and num_particles == num_particles_on_target:
-            esper.dispatch_event(UI_STATE_OPENING)
+            esper.dispatch_event(UI_OPEN_CURTAINS)
 
 def remove_particles():
     for ent, _ in esper.get_component(Particle):
         esper.delete_entity(ent)
 
-esper.set_handler(UI_STATE_IDLE, create_particles)
-esper.set_handler(UI_STATE_CONVERGING, converge_particles)
-esper.set_handler(UI_STATE_OPENING, remove_particles)
+esper.set_handler(UI_START_OKN, converge_particles)
+esper.set_handler(UI_OPEN_CURTAINS, remove_particles)
 
-# MARK: Curtains
+# MARK: OKN: Curtains
 
 class Curtain: pass
 
@@ -415,11 +440,11 @@ class CurtainsOpen(esper.Processor):
         if sum(1 for _ in esper.get_components(Curtain, OOB)) < 2: return
 
         for ent, _ in esper.get_component(Curtain): esper.delete_entity(ent)
-        esper.dispatch_event(UI_STATE_RUNNING)
+        esper.dispatch_event(UI_ELICIT_OKN)
 
-esper.set_handler(UI_STATE_OPENING, create_curtains)
+esper.set_handler(UI_OPEN_CURTAINS, create_curtains)
 
-# MARK: OKN lines
+# MARK: OKN: Lines
 
 class Line: pass
 
@@ -444,9 +469,72 @@ def remove_lines():
     for ent, _ in esper.get_component(Line):
         esper.add_component(ent, Disappear())
 
-esper.set_handler(UI_STATE_OPENING, create_lines)
-esper.set_handler(UI_STATE_RUNNING, advance_lines)
-esper.set_handler(UI_STATE_IDLE, remove_lines)
+esper.set_handler(UI_OPEN_CURTAINS, create_lines)
+esper.set_handler(UI_ELICIT_OKN, advance_lines)
+
+for event in [UI_GO_IDLE, UI_START_SACCADES, UI_START_OKN]:
+    esper.set_handler(event, remove_lines)
+
+# MARK: Saccades
+
+SACCADE_FIXATION_SECONDS = 2
+SACCADE_HIGHLIGHT_COLOR = RED
+
+def activate_saccade_target(ent):
+    esper.add_component(ent, DesiredColor(*SACCADE_HIGHLIGHT_COLOR))
+    esper.add_component(ent, SaccadeExpiry(time.time() + SACCADE_FIXATION_SECONDS))
+    esper.add_component(ent, Halt())
+
+def create_active_saccade_target():
+    ent = esper.create_entity(
+        Position(random.randrange(WINDOW_SIZE[0]), random.randrange(WINDOW_SIZE[1])),
+        Size(PARTICLE_SIDE_LENGTH, PARTICLE_SIDE_LENGTH),
+        Color(*BLACK)
+    )
+
+    activate_saccade_target(ent); return ent
+
+def remove_saccade_targets():
+    for ent, _ in esper.get_component(SaccadeExpiry):
+        esper.remove_component(ent, SaccadeExpiry)
+        esper.add_component(ent, Disappear())
+
+class SaccadeExpiry(int): pass
+class ExpireSaccade(esper.Processor):
+    def process(self):
+        for ent, expiry in esper.get_component(SaccadeExpiry):
+            if time.time() >= expiry:
+                remove_saccade_targets()
+                create_active_saccade_target()
+
+def start_saccades():
+    if any(True for _ in esper.get_components(SaccadeExpiry)): return
+
+    # 0. If there are no particles on the screen, just create a new saccade target
+    if not any(True for _ in esper.get_components(Particle)):
+        create_active_saccade_target()
+        return
+
+    # 1. Otherwise, pick a particle to convert to a saccade target
+    center = np.array(WINDOW_SIZE) / 2
+    center_distance_per_particle = {}
+
+    for ent, (_, position) in esper.get_components(Particle, Position):
+        distance_from_center = np.linalg.norm(np.array(position) - center)
+        center_distance_per_particle[ent] = distance_from_center
+    
+    centermost_particle = min(center_distance_per_particle.keys(), key=lambda p: center_distance_per_particle[p])
+    activate_saccade_target(centermost_particle)
+
+    # 2. You have been demoted from particle
+    esper.remove_component(centermost_particle, Particle)
+
+    # 3. Nuke the remaining particles
+    for ent, particle in esper.get_component(Particle):
+        esper.add_component(ent, Disappear())
+
+esper.set_handler(UI_START_SACCADES, start_saccades)
+for event in [UI_START_OKN, UI_GO_IDLE]: esper.set_handler(event, remove_saccade_targets)
 
 # MARK: Main
 
@@ -457,6 +545,7 @@ def start_ui(window_size, context=None):
         CopyToGPU,
         Render,
         Motion,
+        Slow,
         Convergence, 
         Bounds,
         Respawn,
@@ -464,11 +553,12 @@ def start_ui(window_size, context=None):
         FadeOut,
         AlignParticles,
         CurtainsOpen,
+        ExpireSaccade,
     ]
 
     for processor in processors:
         esper.add_processor(processor())
 
-    esper.dispatch_event(UI_STATE_IDLE)
+    esper.dispatch_event(UI_GO_IDLE)
 
 esper.set_handler(UI_START, start_ui)

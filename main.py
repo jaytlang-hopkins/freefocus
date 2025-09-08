@@ -40,16 +40,17 @@ esper.set_handler(hal.common.HAL_RENDER_CONTEXT_READY, start_ui)
 # MARK: Command parsing
 
 def parse_show(args):
-    elements_to_ui_states = {
-        "okn": ui.UI_STATE_CONVERGING,
-        "pursuit": ui.UI_STATE_IDLE,
+    elements_to_ui_actions = {
+        "okn": ui.UI_START_OKN,
+        "idle": ui.UI_GO_IDLE,
+        "saccades": ui.UI_START_SACCADES,
     }
-    usage = f"usage: show {list(elements_to_ui_states.keys())}"
+    usage = f"usage: show {list(elements_to_ui_actions.keys())}"
 
-    if len(args) != 1 or args[0] not in elements_to_ui_states:
+    if len(args) != 1 or args[0] not in elements_to_ui_actions:
         esper.dispatch_event(cli.CLI_RESPONSE_READY, False, usage)
     else: 
-        esper.dispatch_event(elements_to_ui_states[args[0]])
+        esper.dispatch_event(elements_to_ui_actions[args[0]])
         esper.dispatch_event(cli.CLI_RESPONSE_READY, True)
 
 esper.dispatch_event(cli.CLI_ADD_PARSER, "show", "display an ocular test", parse_show)
