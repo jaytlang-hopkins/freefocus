@@ -2,8 +2,6 @@
 
 Neurological disorders are the leading cause of worldwide disease burden, accounting globally for more disability-adjusted life years (DALYs) than any other category of illness. In 2021, an estimated 3.4 billion people - 43.1% of the global population - were living with such a disease. And, across both chronic and acute neurologic dysfunction, limited diagnostic capability is consistently linked to later-stage presentations and reduced treatment efficacy - especially within rural, underserved, and minority populations.
 
-Digital biomarkers offer a promising path forward: by enabling objective, autonomous measurement of physiologic function, they hold potential to decentralize screening, support earlier referral, and accelerate cross-site clinical trials. Among candidate biomarkers, ocular motor behavior is especially well characterized. Neural circuitry governing visual pathways broadly pervades the brain, and canonical paradigms - such as saccades [14-16], smooth pursuit [17-19], and optokinetic nystagmus [20-21] - exhibit reproducible abnormalities across diverse etiologies.
-
 ### Recent Research Can Fill This Gap
 
 Digital biomarkers offer a promising path forward: by enabling objective, autonomous measurement of physiologic function, they hold potential to decentralize screening, support earlier referral, and accelerate cross-site clinical trials. Among candidate biomarkers, ocular motor behavior is especially well characterized. Neural circuitry governing visual pathways broadly pervades the brain, and canonical paradigms - such as saccades, smooth pursuit, and optokinetic nystagmus - exhibit reproducible abnormalities across diverse etiologies.
