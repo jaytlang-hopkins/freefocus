@@ -23,6 +23,7 @@ import multiprocessing
 import select
 import socket
 import struct
+import sys
 
 # MARK: Commands
 class Command(msgspec.Struct, tag=True):
@@ -94,8 +95,7 @@ class Read(esper.Processor):
         for ent, (conn, _) in esper.get_components(Connection, Readable):
             new_data = conn.socket.recv(16384)
 
-            if len(new_data) == 0:
-                raise ConnectionError("Peer has disconnected")
+            if len(new_data) == 0: sys.exit(0)
 
             conn.message_buffer.extend(new_data)
             parsed_message, conn.message_buffer = decode_object(conn.message_buffer)
@@ -109,8 +109,7 @@ class Flush(esper.Processor):
                 to_send = conn.objects_to_send[0]
                 bytes_sent = conn.socket.send(to_send)
 
-                if bytes_sent == 0:
-                    raise ConnectionError("Peer has disconnected")
+                if bytes_sent == 0: sys.exit(0)
 
                 elif bytes_sent < len(to_send): conn.objects_to_send[0] = to_send[bytes_sent:] 
                 else: conn.objects_to_send.pop(0)
