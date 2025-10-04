@@ -25,6 +25,7 @@ import esper
 import requests
 import resources
 
+from collections import namedtuple
 from dataclasses import dataclass
 from . import common
 
@@ -342,20 +343,20 @@ class Availability(esper.Processor):
             
             # 3. Commit!
             if new_data_available:
-                esper.add_component(ent, Datum({"timestamp": last_update_time}))
-            else: remove_component_if_present(ent, Datum)
+                output = common.run_intake(handle, last_update_time)
+                esper.dispatch_event(common.HAL_DATA_PUBLISHED, output)
 
 # MARK: Data intake
-# Want more data? Define a function here that starts with `intake_`.
 
 class PoorDataSuppression:
     def __enter__(self): pass
-    def __exit__(self, exc_type, exc_val, traceback):
+    def __exit__(self, exc_type, exc_val, _traceback):
         if exc_type == FoveSDKException:
             if exc_val.error_code in FOVE_POOR_DATA_ERRORS: return True
 
-def intake_gaze_vectors(handle, datum):
-    result = {}
+@common.intake(common.Field.PER_EYE_RAW_GAZE, common.Field.PER_EYE_DATA_IS_RELIABLE)
+def intake_gaze_vectors(handle):
+    per_eye_coordinates = []; per_eye_reliability = []
 
     for fove_eye, eye_name in eye_enum_values_to_names().items():
         data_is_reliable = False
@@ -364,62 +365,45 @@ def intake_gaze_vectors(handle, datum):
             sdk().call("fove_Headset_getGazeVector", handle, fove_eye, ctypes.byref(c_vector))
             data_is_reliable = True
 
-        for dimension in "x", "y", "z":
-            datum[f"raw_gaze_{eye_name}_eye_{dimension}"] = getattr(c_vector, dimension)
-            datum[f"{eye_name}_eye_data_is_reliable"] = data_is_reliable
+        per_eye_coordinates.append((c_vector.x, c_vector.y))
+        per_eye_reliability.append(data_is_reliable)
+    
+    return per_eye_coordinates, per_eye_reliability
 
-def intake_eyes_are_open(handle, datum):
+@common.intake(common.Field.PER_EYE_IS_OPEN)
+def intake_eyes_are_open(handle):
+    result = []
     for fove_eye, eye_name in eye_enum_values_to_names().items():
         state_out = ctypes.c_int() 
         sdk().call("fove_Headset_getEyeState", handle, fove_eye, ctypes.byref(state_out))
 
-        if state_out.value == FOVE_EYESTATE_OPEN: datum_value = True
-        elif state_out.value == FOVE_EYESTATE_CLOSED: datum_value = False
-        else: datum_value = None
+        if state_out.value == FOVE_EYESTATE_OPEN: result.append(True)
+        elif state_out.value == FOVE_EYESTATE_CLOSED: result.append(False)
+        else: result.append(None)
+    
+    return result
 
-        datum[f"{eye_name}_eye_open"] = datum_value
-
-def intake_hmd_needs_adjustment(handle, datum):
+@common.intake(common.Field.HMD_NEEDS_ADJUSTMENT)
+def intake_hmd_needs_adjustment(handle):
     adjustment_result = ctypes.c_bool()
     sdk().call("fove_Headset_isHmdAdjustmentGuiVisible", handle, ctypes.byref(adjustment_result))
+    return adjustment_result.value
 
-    datum["hmd_needs_adjustment"] = adjustment_result.value
-
-def intake_saccade_in_progress(handle, datum):
+@common.intake(common.Field.SACCADE_IN_PROGRESS)
+def intake_saccade_in_progress(handle):
     saccade_result = ctypes.c_bool()
     with PoorDataSuppression():
         sdk().call("fove_Headset_isUserShiftingAttention", handle, ctypes.byref(saccade_result))
+    
+    return saccade_result.value
 
-    datum["saccade_in_progress"] = saccade_result.value
-
-def intake_eye_image(handle, datum):
+@common.intake(supplies_image=True)
+def intake_eye_image(handle):
     image = FoveBitmap()
     sdk().call("fove_Headset_fetchEyesImage", handle, 0)
     sdk().call("fove_Headset_getEyesImage", handle, ctypes.byref(image))
 
-    datum["image_bytes"] = bytearray(ctypes.string_at(image.buffer.data, image.buffer.length))
-
-# MARK: Data publication
-
-INTAKE_FUNCTIONS = []
-for name, obj in inspect.getmembers(sys.modules[__name__]):
-    if not inspect.isfunction(obj): continue
-    if obj.__module__ != __name__: continue
-    if "intake_" not in name: continue
-
-    INTAKE_FUNCTIONS.append(obj)
-
-class Publication(esper.Processor):
-    def process(self):
-        for ent, (handle, datum) in esper.get_components(HeadsetHandle, Datum):
-            # 1. Data is newly available! Record it
-            for f in INTAKE_FUNCTIONS: f(handle, datum)
-
-            # 2. Event the data out!
-            esper.dispatch_event(common.HAL_DATA_PUBLISHED, datum)
-
-            # 3. Clean up locally
-            esper.remove_component(ent, Datum)
+    return bytearray(ctypes.string_at(image.buffer.data, image.buffer.length))
 
 # MARK: Rendering
 
@@ -452,7 +436,6 @@ esper.set_handler(common.HAL_PUSH_FRAME_AND_VSYNC, push_frame)
 processors = [
     Connectivity,
     Availability,
-    Publication
 ]
 
 for processor in processors:

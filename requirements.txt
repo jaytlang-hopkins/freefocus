@@ -8,3 +8,5 @@ moderngl
 moderngl_window
 msgspec
 yaspin
+mediapipe
+opencv-python
