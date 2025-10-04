@@ -30,33 +30,44 @@ The current hardware abstraction layer (HAL) targets the FOVE 0 headset; support
 For now, if you have a FOVE, install a copy of the runtime and then run this:
 
 ```bash
-git clone https://github.com/jaytlang-hopkins/EyeMotion.git
-cd EyeMotion
+git clone https://github.com/jaytlang-hopkins/FreeFocus.git
+cd FreeFocus
 pip install -r requirements.txt
 python main.py --device fove
 ```
 
 That's it. Sample usage:
 ```
-python cli.py # allows you to talk to the headset
-
 # To launch a protocol:
 [*] show okn
 
 # To record a session:
 [*] record 30s
+
+# To see all FreeFocus has to offer:
+[*] help
 ```
 
-### For hackers: Code Structure
 
-|**File**	| **Role / Function**
-------------|---------------------------------------------
-|main.py	| Main event loop & protocol control
-|cli.py	| Command-line interface
-|hal.py	| Device/hardware abstraction (<i>integrates with headsets, etc</i>)
-|ui.py	| Renders visual tasks (OKN, pursuit, etc)
-|recorder.py	| Data capture, annotation, and export
-|resources.py|	Manages paths, temp directories
+## Architecture Overview
+
+FreeFocus is built around a modular, event-driven architecture for maintainability and extensibility:
+
+| **File/Folder**         | **Role / Function**                                              |
+|------------------------|------------------------------------------------------------------|
+| `main.py`              | Clinician interaction, bootstraps the FreeFocus daemon |
+| `ipc/`                 | Inter-process communication (IPC) logic, command parsing, privilege separation |
+| `hal/`                 | Device/hardware abstraction (integrates with headsets, etc)       |
+| `ui.py`                | Renders visual tasks (OKN, pursuit, etc)                         |
+| `recorder.py`          | Data capture, annotation, and export                              |
+| `resources.py`         | Manages paths, temp directories                                   |
+
+**Key features:**
+- Modular IPC system with privilege-separated engine process
+- Event-driven ECS (Entity Component System) using `esper`
+- Extensible command system (add new stimuli easily)
+- Device-agnostic hardware abstraction
+- Text-based, interactive CLI for scriptable, approachable testing
 
 ### Demo
 
