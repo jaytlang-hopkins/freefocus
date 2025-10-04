@@ -21,7 +21,7 @@ import time
 import tempfile
 
 from concurrent.futures import ThreadPoolExecutor
-from dataclasses import dataclass, asdict
+from dataclasses import dataclass
 
 from PIL import Image, ImageDraw
 from pyffmpeg import FFmpeg
@@ -80,7 +80,6 @@ esper.set_handler(RECORDER_START, record_with_duration)
 # MARK: Data Receipt
 
 IMAGE_PATH_FIELD = "image_path"
-TIMESTAMP_FIELD = "timestamp"
 
 class Receive(esper.Processor):
     def _flush_image_to_disk(self, packet, target_dir):
@@ -92,6 +91,8 @@ class Receive(esper.Processor):
             )
 
             fp.write(packet.image)
+            fp.flush()
+            fp.close()
             return fp.name
 
     def _serialize_packet(self, packet, image_path):

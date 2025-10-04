@@ -26,14 +26,15 @@ This is an open infrastructure that lets every clinical/research team:
 
 ## Quickstart
 
-The current hardware abstraction layer (HAL) targets the FOVE 0 headset; support for other headsets is easy to add and on the way.
-For now, if you have a FOVE, install a copy of the runtime and then run this:
+The current hardware abstraction layer (HAL) will work *with your webcam* :sparkles: -- you can try FreeFocus at your desk right now! Support for the FOVE 0 headset is provided for more precise tracking, and additional hardware support is underway.
+
+To try out FreeFocus, just run:
 
 ```bash
 git clone https://github.com/jaytlang-hopkins/FreeFocus.git
 cd FreeFocus
 pip install -r requirements.txt
-python main.py --device fove
+python main.py --device screen
 ```
 
 That's it. Sample usage:
@@ -41,7 +42,7 @@ That's it. Sample usage:
 # To launch a protocol:
 [*] show okn
 
-# To record a session:
+# To record your eyes:
 [*] record 30s
 
 # To see all FreeFocus has to offer:

@@ -86,7 +86,6 @@ CAMERA_WIDTH = 640
 CAMERA_HEIGHT = 480
 
 class ReadyForInput: pass
-class CaptureThread(threading.Thread): pass
 
 @dataclass
 class Camera:
