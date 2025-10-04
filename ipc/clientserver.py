@@ -84,7 +84,7 @@ class Read(esper.Processor):
                 raise ConnectionError("Peer has disconnected")
 
             conn.message_buffer.extend(new_data)
-            parsed_message, conn.message_buffer = decode_object(self._message_buffer)
+            parsed_message, conn.message_buffer = decode_object(conn.message_buffer)
 
             if parsed_message is not None: esper.create_entity(parsed_message)
 
@@ -112,7 +112,7 @@ IPC_CLIENT_RECEIVED_RESPONSE = "ipc_received_response"
 
 class SendCommand(esper.Processor):
     def process(self):
-        for _, conn in esper.get_components(Connection):
+        for _, conn in esper.get_component(Connection):
             for ent, cmd in esper.get_component(Command):
                 encoded_command = encode_object(cmd)
                 conn.objects_to_send.append(encoded_command)
@@ -120,8 +120,9 @@ class SendCommand(esper.Processor):
 
 class GetResponse(esper.Processor):
     def process(self):
-        for _, response in esper.get_component(Response):
+        for ent, response in esper.get_component(Response):
             esper.dispatch_event(IPC_CLIENT_RECEIVED_RESPONSE, response.succeeded, response.message)
+            esper.delete_entity(ent)
 
 def forward_user_input(user_input):
     split_input = user_input.strip().split()
@@ -133,7 +134,7 @@ class Listener(socket.socket): pass
 
 class Listen(esper.Processor):
     def _ensure_listener(self):
-        if any(esper.get_component(Listener), None): return
+        if any(esper.get_component(Listener)): return
 
         l = Listener(socket.AF_INET, socket.SOCK_STREAM)
 
@@ -206,11 +207,15 @@ def add_parser(key, description, callback):
 class PendingConnection(socket.socket): pass
 
 class Connect(esper.Processor):
-    def _ensure_connection_attempt():
+    def _ensure_connection_attempt(self):
         if any(esper.get_component(PendingConnection)): return
 
         s = PendingConnection(socket.AF_INET, socket.SOCK_STREAM)
         s.setblocking(False)
+
+        try: s.connect(IPC_ADDRESS)
+        except BlockingIOError: pass
+
         esper.create_entity(s)
 
     def process(self):
@@ -218,8 +223,7 @@ class Connect(esper.Processor):
 
         self._ensure_connection_attempt()
         for ent, socket in esper.get_component(PendingConnection):
-            try: socket.connect(IPC_ADDRESS)
-            except (ConnectionRefusedError, BlockingIOError): return
+            if Writeable not in query_socket_capabilities(socket): continue
 
             esper.create_entity(Connection(
                 socket=socket,
@@ -228,11 +232,19 @@ class Connect(esper.Processor):
             ))
             esper.delete_entity(ent)
 
-def respond(succeeded, message):
+class Respond(esper.Processor):
+    def process(self):
+        for _, conn in esper.get_component(Connection):
+            for ent, response in esper.get_component(Response):
+                encoded_response = encode_object(response)
+                conn.objects_to_send.append(encoded_response)
+                esper.delete_entity(ent)
+
+def respond(succeeded, message=""):
     esper.create_entity(Response(succeeded, message))
 
 def initialize_server():
-    for p in Parse, Connect: esper.add_processor(p())
+    for p in Parse, Connect, Respond: esper.add_processor(p())
 
     esper.set_handler(IPC_SERVER_ADD_PARSER, add_parser)
     esper.set_handler(IPC_SERVER_RESPONSE_READY, respond)
@@ -241,11 +253,15 @@ esper.set_handler(IPC_SERVER_INITIALIZE, initialize_server)
 
 # MARK: Fork
 def engine_entry(*args):
+    esper.dispatch_event(IPC_SERVER_INITIALIZE)
+
     from . import engine
     esper.dispatch_event(engine.ENGINE_START_RUNLOOP, *args)
 
 def fork_engine(*args):
-    p = multiprocessing.Process(target=engine_entry, args=args)
+    esper.dispatch_event(IPC_CLIENT_INITIALIZE)
+
+    p = multiprocessing.Process(target=engine_entry, args=args, name="FreeFocus Daemon")
     p.start()
 
     def terminate_engine(): p.terminate(); p.join()

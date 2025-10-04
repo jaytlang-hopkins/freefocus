@@ -13,19 +13,38 @@
 # You should have received a copy of the GNU General Public License along with
 # EyeMotion. If not, see <https://www.gnu.org/licenses/>. 
 
+from dataclasses import dataclass
+
 import argparse
 import esper
+import time 
+import sys
 
 import hal.common
 import ipc.clientserver
+
+# MARK: Clinician interface
+
+def prompt_user(last_command_successful, associated_message=""):
+    prompt = "[*]" if last_command_successful else "[!]"
+    if associated_message != "": print(associated_message)
+
+    new_input = ""
+    while new_input == "":
+        print(f"{prompt} > ", end="", flush=True)
+        try: new_input = input().strip()
+        except EOFError: sys.exit(0)
+    
+    if new_input != "":
+        esper.dispatch_event(ipc.clientserver.IPC_CLIENT_FORWARD_INPUT, new_input)
 
 # MARK: Bootstrap
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(
-        prog="EyeMotion",
+        prog="FreeFocus",
         description="A device-agnostic platform for oculomotor screening in resource-diverse settings",
-        epilog="EyeMotion is free software; you are welcome to redistribute it. See `LICENSE.txt` for details."
+        epilog="FreeFocus is free software; you are welcome to redistribute it. See `LICENSE.txt` for details."
     )
     
     parser.add_argument(
@@ -39,7 +58,8 @@ if __name__ == "__main__":
     args = parser.parse_args(); device = args.device
     esper.dispatch_event(ipc.clientserver.IPC_FORK_ENGINE, device)
     
-    # TODO: add back the CLI here
-    import time 
-    while True: time.sleep(1)
-    
+    esper.set_handler(ipc.clientserver.IPC_CLIENT_RECEIVED_RESPONSE, prompt_user)
+    esper.process() # pump once to make sure we connect to the daemon
+
+    prompt_user(True, "Welcome to FreeFocus! Type 'help' for a list of commands.")
+    while True: esper.process()
