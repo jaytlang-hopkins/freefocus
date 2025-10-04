@@ -13,8 +13,6 @@
 # You should have received a copy of the GNU General Public License along with
 # FreeFocus. If not, see <https://www.gnu.org/licenses/>. 
 
-from dataclasses import dataclass
-
 import argparse
 import esper
 import time 
@@ -22,6 +20,8 @@ import sys
 
 import hal.common
 import ipc.clientserver
+
+from yaspin import yaspin
 
 # MARK: Clinician interface
 
@@ -56,10 +56,14 @@ if __name__ == "__main__":
     )
     
     args = parser.parse_args(); device = args.device
-    esper.dispatch_event(ipc.clientserver.IPC_FORK_ENGINE, device)
-    
-    esper.set_handler(ipc.clientserver.IPC_CLIENT_RECEIVED_RESPONSE, prompt_user)
-    esper.process() # pump once to make sure we connect to the daemon
 
-    prompt_user(True, "Welcome to FreeFocus! Type 'help' for a list of commands.")
+    sp = yaspin(text="Initializing FreeFocus", color="cyan"); sp.start()
+    def initialization_is_complete(*_args):
+        global sp
+        if sp is not None: sp.ok("✔"); sp = None
+
+    esper.set_handler(ipc.clientserver.IPC_CLIENT_RECEIVED_RESPONSE, initialization_is_complete)
+    esper.set_handler(ipc.clientserver.IPC_CLIENT_RECEIVED_RESPONSE, prompt_user)
+
+    esper.dispatch_event(ipc.clientserver.IPC_FORK_ENGINE, device)
     while True: esper.process()

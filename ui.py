@@ -352,6 +352,7 @@ UI_OPEN_CURTAINS = "ui_open_curtains"
 UI_ELICIT_OKN = "ui_elicit_okn"
 
 UI_START = "ui_start"
+UI_FIRST_FRAME = "ui_first_frame"
 UI_FRAME_READY = "ui_frame_ready"
 
 # MARK: Particles
@@ -560,5 +561,6 @@ def start_ui(window_size, context=None):
         esper.add_processor(processor())
 
     esper.dispatch_event(UI_GO_IDLE)
+    esper.dispatch_event(UI_FIRST_FRAME)
 
 esper.set_handler(UI_START, start_ui)

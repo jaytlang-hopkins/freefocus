@@ -35,6 +35,11 @@ esper.set_handler(recorder.RECORDER_COMPLETE, recording_complete)
 def start_ui(window_size, context=None): esper.dispatch_event(ui.UI_START, window_size, context)
 esper.set_handler(hal.common.HAL_RENDER_CONTEXT_READY, start_ui)
 
+WELCOME_MESSAGE = "Welcome to FreeFocus! Type 'help' for a list of commands."
+
+def engine_setup_complete(): esper.dispatch_event(clientserver.IPC_SERVER_RESPONSE_READY, True, WELCOME_MESSAGE)
+esper.set_handler(ui.UI_FIRST_FRAME, engine_setup_complete)
+
 # MARK: Command parsing
 
 def parse_show(args):
