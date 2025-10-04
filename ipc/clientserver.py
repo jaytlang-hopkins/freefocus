@@ -2,8 +2,10 @@
 from dataclasses import dataclass
 from typing import Callable, List, Union
 
+import atexit
 import esper
 import msgspec
+import multiprocessing
 import select
 import socket
 import struct
@@ -104,9 +106,9 @@ for processor in Select, Read, Flush:
 
 # MARK: Client process
 
-CLI_CLIENT_INITIALIZE = "cli_client_initialize"
-CLI_CLIENT_FORWARD_INPUT = "cli_forward_input"
-CLI_CLIENT_RECEIVED_RESPONSE = "cli_received_response"
+IPC_CLIENT_INITIALIZE = "ipc_client_initialize"
+IPC_CLIENT_FORWARD_INPUT = "ipc_forward_input"
+IPC_CLIENT_RECEIVED_RESPONSE = "ipc_received_response"
 
 class SendCommand(esper.Processor):
     def process(self):
@@ -119,7 +121,7 @@ class SendCommand(esper.Processor):
 class GetResponse(esper.Processor):
     def process(self):
         for _, response in esper.get_component(Response):
-            esper.dispatch_event(CLI_CLIENT_RECEIVED_RESPONSE, response.succeeded, response.message)
+            esper.dispatch_event(IPC_CLIENT_RECEIVED_RESPONSE, response.succeeded, response.message)
 
 def forward_user_input(user_input):
     split_input = user_input.strip().split()
@@ -161,14 +163,15 @@ class Listen(esper.Processor):
 
 def initialize_client():
     for p in SendCommand, GetResponse, Listen: esper.add_processor(p())
-    esper.set_handler(CLI_CLIENT_FORWARD_INPUT, forward_user_input)
+    esper.set_handler(IPC_CLIENT_FORWARD_INPUT, forward_user_input)
 
-esper.set_handler(CLI_CLIENT_INITIALIZE, initialize_client)
+esper.set_handler(IPC_CLIENT_INITIALIZE, initialize_client)
 
 # MARK: Server process
 
-CLI_SERVER_ADD_PARSER = "cli_server_add_parser"
-CLI_SERVER_INITIALIZE = "cli_server_initialize"
+IPC_SERVER_ADD_PARSER = "ipc_server_add_parser"
+IPC_SERVER_INITIALIZE = "ipc_server_initialize"
+IPC_SERVER_RESPONSE_READY = "ipc_server_response_ready"
 
 @dataclass
 class Parser:
@@ -225,8 +228,28 @@ class Connect(esper.Processor):
             ))
             esper.delete_entity(ent)
 
+def respond(succeeded, message):
+    esper.create_entity(Response(succeeded, message))
+
 def initialize_server():
     for p in Parse, Connect: esper.add_processor(p())
-    esper.set_handler(CLI_SERVER_ADD_PARSER, add_parser)
 
-esper.set_handler(CLI_SERVER_INITIALIZE, initialize_server)
+    esper.set_handler(IPC_SERVER_ADD_PARSER, add_parser)
+    esper.set_handler(IPC_SERVER_RESPONSE_READY, respond)
+
+esper.set_handler(IPC_SERVER_INITIALIZE, initialize_server)
+
+# MARK: Fork
+def engine_entry(*args):
+    from . import engine
+    esper.dispatch_event(engine.ENGINE_START_RUNLOOP, *args)
+
+def fork_engine(*args):
+    p = multiprocessing.Process(target=engine_entry, args=args)
+    p.start()
+
+    def terminate_engine(): p.terminate(); p.join()
+    atexit.register(terminate_engine)
+
+IPC_FORK_ENGINE = "ipc_fork_engine"
+esper.set_handler(IPC_FORK_ENGINE, fork_engine)
