@@ -42,7 +42,7 @@ def parse_exit(_args):
     print("Stopped by client")
     sys.exit(0)
 
-esper.dispatch_event(clientserver.IPC_SERVER_ADD_PARSER, "exit", "stop the EyeMotion service", parse_exit)
+esper.dispatch_event(clientserver.IPC_SERVER_ADD_PARSER, "exit", "stop the FreeFocus service", parse_exit)
 
 def parse_record(args):
     usage = "usage: record duration[unit]. supported units are s(econds, e.g. 10s), m(inutes, e.g. 1m)"

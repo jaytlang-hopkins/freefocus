@@ -30,8 +30,8 @@ The current hardware abstraction layer (HAL) targets the FOVE 0 headset; support
 For now, if you have a FOVE, install a copy of the runtime and then run this:
 
 ```bash
-git clone https://github.com/jaytlang-hopkins/EyeMotion.git
-cd EyeMotion
+git clone https://github.com/jaytlang-hopkins/FreeFocus.git
+cd FreeFocus
 pip install -r requirements.txt
 python main.py --device fove
 ```
