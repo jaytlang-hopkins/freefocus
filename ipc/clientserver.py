@@ -93,7 +93,10 @@ class Select(esper.Processor):
 class Read(esper.Processor):
     def process(self):
         for ent, (conn, _) in esper.get_components(Connection, Readable):
-            new_data = conn.socket.recv(16384)
+            try: new_data = conn.socket.recv(16384)
+            except ConnectionResetError:
+                print("Server exit unexpectedly!")
+                sys.exit(1)
 
             if len(new_data) == 0: sys.exit(0)
 
