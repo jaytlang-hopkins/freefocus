@@ -14,21 +14,15 @@ Video-oculography (VOG) provides a non-invasive means to capture these signals, 
 
 These barriers create a fragmented, non-interoperable evidence base for VOG-based diagnostics, stifle cross-site collaboration towards digital biomarker discovery, and hinder neurological screening efforts in non-tertiary settings.  This reflects a cross-level organizational gap in digital health infrastructure, and stands at odds with a national health strategy advocating secure, interoperable, and socioeconomically unbiased research technology.
 
-## My contribution: screening where it is needed
+## What could this look like?
 
-To rectify these limitations, I've developed FreeFocus - an open-source, device-agnostic, telemedicine-ready VOG platform validated across heterogeneous hardware. FreeFocus is a *critical enabler* for the next generation of oculomotor biomarker research, and may more broadly contribute to telemedical neurological care.
+Over the Summer of 2025, a team of neurologists and I built a proof-of-concept designed to address the above limitations. The result is a VOG platform which is easily portable and extensible - and which maintains security (data stays on-device, privilege separation is implemented) while providing niceties like real-time video annotation. Thanks to this modular design, you can use the platform on a FOVE 0 headset or...
 
-This is an open infrastructure that lets every clinical/research team:
+## Demo!
 
-* Easily make new visual/oculomotor protocols and bring them to the bedside - with _any_ modern VR device, or even a webcam and a laptop.
-* Record a uniform set of eye tracking data, and synchronize that with an annotated video - so clinicians can immediately review screening results.
-* Serve patients with a system built for efficiency and privacy - so screening is possible regardless of the setting.
+...on your desktop!
 
-## Quickstart
-
-The current hardware abstraction layer (HAL) will work *with your webcam* :sparkles: -- you can try FreeFocus at your desk right now! Support for the FOVE 0 headset is provided for more precise tracking, and additional hardware support is underway.
-
-To try out FreeFocus, just run:
+The current hardware abstraction layer (HAL) will work *with your webcam*. To give this a try, run something like the following on your UNIX-like system:
 
 ```bash
 git clone https://github.com/jaytlang-hopkins/FreeFocus.git
@@ -49,6 +43,7 @@ That's it. Sample usage:
 [*] help
 ```
 
+Granted, eye tracking with only a webcam isn't _ideal_ -- but this is supposed to prove that these sorts of technologies can work.
 
 ## Architecture Overview
 
@@ -70,19 +65,17 @@ FreeFocus is built around a modular, event-driven architecture for maintainabili
 - Device-agnostic hardware abstraction
 - Text-based, interactive CLI for scriptable, approachable testing
 
-### Demo
-
-TODO!
-
 ## About the Author
 
-I’m Jay - a post-bac premedical student at Johns Hopkins. I trained as a systems
-engineer at MIT, worked at Apple, but found my calling in medicine: a field
-where I can be present for everyone, regardless of the technology at hand.
+I’m Jay - a post-bac premedical student at Johns Hopkins. I trained as a
+systems engineer at MIT, worked at Apple, but found my calling in medicine: a
+field where I can be present for everyone, regardless of the technology at
+hand.
 
-It's my hope that this last-mile translational research reflects my urgency and
-commitment to this field. With systems like this, we plug critical holes and
-get treatments to patients quicker regardless of their circumstances. That allows providers - and future providers, like me - to do more, and be more.
+With systems like this one, informed from clinical context, we plug critical
+holes and get treatments to patients quicker regardless of their circumstances.
+That allows providers - and future providers, like me - to do more, and be
+more.
 
 ## Contributing
 Open an issue, pull request, or [email me](mailto:jlang20@jh.edu)
